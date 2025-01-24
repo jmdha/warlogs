@@ -6,6 +6,10 @@
 namespace Event {
 enum class Kind { Undefined, Version, ZoneChange, MapChange };
 
+struct Undefined {
+  std::string_view event;
+};
+
 struct Version {
   unsigned int log;   // Which logging version
   unsigned int major; // Major of build version
@@ -26,7 +30,7 @@ struct MapChange {
   unsigned int x0, y0, x1, y1; // Map bounds
 };
 
-using Event = std::variant<Version, ZoneChange, MapChange>;
+using Event = std::variant<Undefined, Version, ZoneChange, MapChange>;
 
 Event Parse(const std::string &);
 }; // namespace Event
