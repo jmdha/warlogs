@@ -1,5 +1,5 @@
 cmake_minimum_required(
-    VERSION 3.22.1
+    VERSION 3.2
 )
 
 project(
@@ -12,7 +12,10 @@ project(
 add_library(
     ${PROJECT_NAME}
     SHARED
-    ${CMAKE_CURRENT_LIST_DIR}/include/${PROJECT_NAME}/types.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/include/${PROJECT_NAME}/event.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/include/${PROJECT_NAME}/utils.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/event.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/utils.cpp
 )
 
 set_target_properties(
@@ -21,9 +24,15 @@ set_target_properties(
     LINKER_LANGUAGE CXX
 )
 
+set_property(
+    TARGET ${PROJECT_NAME}
+    PROPERTY
+    CXX_STANDARD 17
+)
+
 target_include_directories(
     ${PROJECT_NAME}
-    INTERFACE
+    PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
 )
@@ -32,3 +41,5 @@ install(
     DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/${PROJECT_NAME}
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
 )
+
+add_subdirectory(test)
