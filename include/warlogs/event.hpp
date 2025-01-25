@@ -21,12 +21,12 @@ struct Version {
 struct ZoneChange {
   unsigned int instance;   // Instance ID
   unsigned int difficulty; // Difficulty ID
-  std::string name;        // Zone name
+  std::string_view name;   // Zone name
 };
 
 struct MapChange {
   unsigned int id;             // Map ID
-  std::string name;            // Map name
+  std::string_view name;       // Map name
   unsigned int x0, y0, x1, y1; // Map bounds
 };
 
