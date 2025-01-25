@@ -10,6 +10,7 @@ struct Undefined {
   std::string_view event;
 };
 
+// COMBAT_LOG_VERSION,X,ADVANCED_LOG_ENABLED,X,BUILD_VERSION,X.X.X,PROJECT_ID,X
 struct Version {
   unsigned int log;   // Which logging version
   unsigned int major; // Major of build version
@@ -18,12 +19,14 @@ struct Version {
   bool advanced;      // Is advanced logging enabled
 };
 
+// ZONE_CHANGE, instanceID, zoneName, difficultyID
 struct ZoneChange {
   unsigned int instance;   // Instance ID
   unsigned int difficulty; // Difficulty ID
   std::string_view name;   // Zone name
 };
 
+// MAP_CHANGE, uiMapID, uiMapName, x0, x1, y0, y1
 struct MapChange {
   unsigned int id;             // Map ID
   std::string_view name;       // Map name

@@ -8,6 +8,8 @@ project(
     DESCRIPTION "World of Warcraft log parsing"
     LANGUAGES CXX
 )
+enable_testing()
+include(FetchContent)
 
 add_library(
     ${PROJECT_NAME}
@@ -41,5 +43,4 @@ install(
     DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/${PROJECT_NAME}
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
 )
-
-add_subdirectory(test)
+include(test/CMakeLists.txt)

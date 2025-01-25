@@ -70,8 +70,8 @@ Event ParseMapChange(const std::vector<std::string_view> &tokens) {
   // Names are surrounded by quoutes, i.e. "", as such remove first and last char
   const std::string_view name = tokens[2].substr(1, tokens[2].size() - 2);
   const unsigned int x0 = atoi(tokens[3].data());
-  const unsigned int y0 = atoi(tokens[4].data());
-  const unsigned int x1 = atoi(tokens[5].data());
+  const unsigned int x1 = atoi(tokens[4].data());
+  const unsigned int y0 = atoi(tokens[5].data());
   const unsigned int y1 = atoi(tokens[6].data());
   return MapChange{.id = id, .name = name, .x0 = x0, .y0 = y0, .x1 = x1, .y1 = y1};
 }
