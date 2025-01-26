@@ -3,9 +3,7 @@
 #include <string>
 #include <variant>
 
-namespace Event {
-enum class Kind { Undefined, Version, ZoneChange, MapChange };
-
+namespace warlogs {
 struct Undefined {
   std::string_view event;
 };

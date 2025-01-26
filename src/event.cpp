@@ -1,3 +1,4 @@
+#include <functional>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
@@ -6,15 +7,17 @@
 #include "warlogs/event.hpp"
 #include "warlogs/utils.hpp"
 
-namespace Event {
+namespace warlogs {
 Event ParseVersion(const std::vector<std::string_view> &);
 Event ParseZoneChange(const std::vector<std::string_view> &);
 Event ParseMapChange(const std::vector<std::string_view> &);
 
-const std::unordered_map<std::string_view, Kind> MAP = {
-    {"COMBAT_LOG_VERSION", Kind::Version},
-    {"ZONE_CHANGE", Kind::ZoneChange},
-    {"MAP_CHANGE", Kind::MapChange},
+const std::unordered_map<std::string_view,
+                         std::function<Event(const std::vector<std::string_view>)>>
+    MAP = {
+        {"COMBAT_LOG_VERSION", ParseVersion},
+        {"ZONE_CHANGE", ParseZoneChange},
+        {"MAP_CHANGE", ParseMapChange},
 };
 
 // A log event starts with a date, which can be skipped by skipping 3 spaces
@@ -37,14 +40,8 @@ Event Parse(const std::string &str) {
 
   if (event_kind == MAP.end())
     return Undefined{.event = event_name};
-  switch (event_kind->second) {
-  case Kind::Version: return ParseVersion(tokens);
-  case Kind::ZoneChange: return ParseZoneChange(tokens);
-  case Kind::MapChange: return ParseMapChange(tokens); break;
-  default: break;
-  }
-
-  return Undefined{.event = "INTERNAL_ERROR"};
+  else
+    return event_kind->second(tokens);
 }
 
 Event ParseVersion(const std::vector<std::string_view> &tokens) {
@@ -75,4 +72,4 @@ Event ParseMapChange(const std::vector<std::string_view> &tokens) {
   const unsigned int y1 = atoi(tokens[6].data());
   return MapChange{.id = id, .name = name, .x0 = x0, .y0 = y0, .x1 = x1, .y1 = y1};
 }
-} // namespace Event
+} // namespace warlogs
