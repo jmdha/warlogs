@@ -31,7 +31,12 @@ struct MapChange {
   unsigned int x0, y0, x1, y1; // Map bounds
 };
 
-using Event = std::variant<Undefined, Version, ZoneChange, MapChange>;
+struct UnitDied {
+  std::string_view id;
+  std::string_view name;
+};
+
+using Event = std::variant<Undefined, Version, ZoneChange, MapChange, UnitDied>;
 
 Event Parse(const std::string &);
 }; // namespace Event

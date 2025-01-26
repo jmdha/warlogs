@@ -11,6 +11,7 @@ namespace warlogs {
 Event ParseVersion(const std::vector<std::string_view> &);
 Event ParseZoneChange(const std::vector<std::string_view> &);
 Event ParseMapChange(const std::vector<std::string_view> &);
+Event ParseUnitDied(const std::vector<std::string_view> &);
 
 const std::unordered_map<std::string_view,
                          std::function<Event(const std::vector<std::string_view>)>>
@@ -18,6 +19,7 @@ const std::unordered_map<std::string_view,
         {"COMBAT_LOG_VERSION", ParseVersion},
         {"ZONE_CHANGE", ParseZoneChange},
         {"MAP_CHANGE", ParseMapChange},
+        {"UNIT_DIED", ParseUnitDied},
 };
 
 Event Parse(const std::string &str) {
@@ -61,5 +63,11 @@ Event ParseMapChange(const std::vector<std::string_view> &tokens) {
   const unsigned int y0 = atoi(tokens[5].data());
   const unsigned int y1 = atoi(tokens[6].data());
   return MapChange{.id = id, .name = name, .x0 = x0, .y0 = y0, .x1 = x1, .y1 = y1};
+}
+
+Event ParseUnitDied(const std::vector<std::string_view> &tokens) {
+  const std::string_view id = tokens[5];
+  const std::string_view name = tokens[6].substr(1, tokens[6].size() - 2);
+  return UnitDied{.id = id, .name = name};
 }
 } // namespace warlogs

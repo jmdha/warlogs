@@ -42,4 +42,17 @@ TEST(EventParse, ZoneChange) {
   EXPECT_EQ(unwrapped.difficulty, 23);
   EXPECT_EQ(unwrapped.name, "The Stonevault");
 }
+
+TEST(EventParse, UnitDied) {
+  const std::string str = "0/00/0000 00:00:00.0000  "
+                          "UNIT_DIED,0000000000000000,nil,0x80000000,0x80000000,SOME_ID,\"ABC\",0x512,0x0,1";
+
+  const Event event = Parse(str);
+
+  EXPECT_TRUE(std::holds_alternative<UnitDied>(event));
+  const UnitDied unwrapped = std::get<UnitDied>(event);
+  std::cout << unwrapped.id << " " << unwrapped.name << std::endl;
+  EXPECT_EQ(unwrapped.id, "SOME_ID");
+  EXPECT_EQ(unwrapped.name, "ABC");
+}
 }
