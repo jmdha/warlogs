@@ -20,21 +20,11 @@ const std::unordered_map<std::string_view,
         {"MAP_CHANGE", ParseMapChange},
 };
 
-// A log event starts with a date, which can be skipped by skipping 3 spaces
-std::size_t FindStart(const std::string &str) {
-  unsigned int spaces = 0;
-
-  for (std::size_t i = 0; i < str.size(); i++)
-    if (str[i] == ' ')
-      if (++spaces > 2)
-        return i + 1;
-
-  throw std::invalid_argument("Input does not contain three spaces");
-}
-
 Event Parse(const std::string &str) {
-  const std::size_t start = FindStart(str);
-  const std::vector<std::string_view> tokens = Split(&str[start], ',');
+  const std::optional<std::size_t> start = CharIdx(str, ' ', 3);
+  if (!start.has_value())
+    throw std::invalid_argument("Invalid input");
+  const std::vector<std::string_view> tokens = Split(&str[start.value()], ',');
   const std::string_view &event_name = tokens.at(0);
   const auto event_kind = MAP.find(event_name);
 

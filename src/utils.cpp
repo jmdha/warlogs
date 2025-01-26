@@ -25,3 +25,14 @@ std::vector<std::string_view> Split(const std::string_view str,
   result.push_back(finalColumn);
   return result;
 }
+
+std::optional<std::size_t> CharIdx(const std::string_view str, char ch, unsigned int count) {
+  unsigned int found = 0;
+
+  for (std::size_t i = 0; i < str.size(); i++)
+    if (str.at(i) == ch)
+      if (++found > 2)
+        return i + 1;
+
+  return {};
+}
