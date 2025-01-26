@@ -1,8 +1,8 @@
 #include "warlogs/utils.hpp"
 #include <cstring>
 
-std::vector<std::string_view> Split(const std::string_view str,
-                                    const char delim) {
+namespace warlogs {
+std::vector<std::string_view> Split(const std::string_view str, const char delim) {
   std::vector<std::string_view> result;
 
   int indexCommaToLeftOfColumn = 0;
@@ -20,8 +20,7 @@ std::vector<std::string_view> Split(const std::string_view str,
     }
   }
   const std::string_view finalColumn(str.data() + indexCommaToRightOfColumn + 1,
-                                     str.size() - indexCommaToRightOfColumn -
-                                         1);
+                                     str.size() - indexCommaToRightOfColumn - 1);
   result.push_back(finalColumn);
   return result;
 }
@@ -36,3 +35,4 @@ std::optional<std::size_t> CharIdx(const std::string_view str, char ch, unsigned
 
   return {};
 }
+} // namespace warlogs
