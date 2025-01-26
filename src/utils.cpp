@@ -35,4 +35,9 @@ std::optional<std::size_t> CharIdx(const std::string_view str, char ch, unsigned
 
   return {};
 }
+
+std::string_view Trim(const std::string_view str) {
+  return str.substr(1, str.size() - 2);
+}
+
 } // namespace warlogs

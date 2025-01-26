@@ -49,15 +49,13 @@ Event ParseVersion(const std::vector<std::string_view> &tokens) {
 Event ParseZoneChange(const std::vector<std::string_view> &tokens) {
   const unsigned int instance = atoi(tokens[1].data());
   const unsigned int difficulty = atoi(tokens[3].data());
-  // Names are surrounded by quoutes, i.e. "", as such remove first and last char
-  const std::string_view name = tokens[2].substr(1, tokens[2].size() - 2);
+  const std::string_view name = Trim(tokens[2]);
   return ZoneChange{.instance = instance, .difficulty = difficulty, .name = name};
 }
 
 Event ParseMapChange(const std::vector<std::string_view> &tokens) {
   const unsigned int id = atoi(tokens[1].data());
-  // Names are surrounded by quoutes, i.e. "", as such remove first and last char
-  const std::string_view name = tokens[2].substr(1, tokens[2].size() - 2);
+  const std::string_view name = Trim(tokens[2]);
   const unsigned int x0 = atoi(tokens[3].data());
   const unsigned int x1 = atoi(tokens[4].data());
   const unsigned int y0 = atoi(tokens[5].data());
@@ -67,7 +65,7 @@ Event ParseMapChange(const std::vector<std::string_view> &tokens) {
 
 Event ParseUnitDied(const std::vector<std::string_view> &tokens) {
   const std::string_view id = tokens[5];
-  const std::string_view name = tokens[6].substr(1, tokens[6].size() - 2);
+  const std::string_view name = Trim(tokens[6]);
   return UnitDied{.id = id, .name = name};
 }
 } // namespace warlogs
