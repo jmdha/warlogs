@@ -31,12 +31,40 @@ struct MapChange {
   unsigned int x0, y0, x1, y1; // Map bounds
 };
 
+// UNIT_DIED, ?, ?, ?, ?, unitID, unitName, ?, recapID, uncounsciousOnDeath
 struct UnitDied {
   std::string_view id;
   std::string_view name;
 };
 
-using Event = std::variant<Undefined, Version, ZoneChange, MapChange, UnitDied>;
+struct PartyKill {};
+
+struct SpellCastSucess {};
+
+struct SpellAuraApplied {};
+
+struct SpellSummon {};
+
+struct SpellDamage {};
+
+struct SpellInstakill {};
+
+struct SpellAuraRemoved {};
+
+struct SpellAuraRefresh {};
+
+struct SpellPeriodicHeal {};
+
+struct SpellEnergize {};
+
+struct SpellPeriodicDamage {};
+
+struct SpellHeal {};
+
+using Event = std::variant<Undefined, Version, ZoneChange, MapChange, UnitDied, PartyKill,
+                           SpellCastSucess, SpellSummon, SpellInstakill, SpellEnergize, SpellHeal,
+                           SpellDamage, SpellPeriodicDamage, SpellPeriodicHeal, SpellAuraApplied,
+                           SpellAuraRefresh, SpellAuraRemoved>;
 
 Event Parse(const std::string &);
-}; // namespace Event
+}; // namespace warlogs
