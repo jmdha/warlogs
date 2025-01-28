@@ -12,15 +12,15 @@ Event ParseVersion(const std::vector<std::string_view> &);
 Event ParseZoneChange(const std::vector<std::string_view> &);
 Event ParseMapChange(const std::vector<std::string_view> &);
 Event ParseUnitDied(const std::vector<std::string_view> &);
+Event ParsePartyKill(const std::vector<std::string_view> &);
 
 const std::unordered_map<std::string_view,
                          std::function<Event(const std::vector<std::string_view>)>>
-    MAP = {
-        {"COMBAT_LOG_VERSION", ParseVersion},
-        {"ZONE_CHANGE", ParseZoneChange},
-        {"MAP_CHANGE", ParseMapChange},
-        {"UNIT_DIED", ParseUnitDied},
-};
+    MAP = {{"COMBAT_LOG_VERSION", ParseVersion},
+           {"ZONE_CHANGE", ParseZoneChange},
+           {"MAP_CHANGE", ParseMapChange},
+           {"UNIT_DIED", ParseUnitDied},
+           {"PARTY_KILL", ParsePartyKill}};
 
 Event Parse(const std::string &str) {
   const std::optional<std::size_t> start = CharIdx(str, ' ', 3);
@@ -68,4 +68,6 @@ Event ParseUnitDied(const std::vector<std::string_view> &tokens) {
   const std::string_view name = Trim(tokens[6]);
   return UnitDied{.id = id, .name = name};
 }
+
+Event ParsePartyKill(const std::vector<std::string_view> &tokens) { return PartyKill{}; }
 } // namespace warlogs
