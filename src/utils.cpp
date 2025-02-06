@@ -43,7 +43,6 @@ std::string_view Trim(std::string_view str) noexcept { return str.substr(1, str.
 std::time_t Timestamp(std::string_view sv) noexcept {
   int day, month, year, hours, mins, secs;
   sscanf(sv.data(), "%d/%d/%d %d:%d:%d", &month, &day, &year, &hours, &mins, &secs);
-  printf("%d/%d/%d %d:%d:%d\n", month, day, year, hours, mins, secs);
   std::tm tm = {
       .tm_sec = secs,
       .tm_min = mins,
