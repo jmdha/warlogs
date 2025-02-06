@@ -29,7 +29,7 @@ std::pair<std::time_t, Event> Parse(const std::string &str) {
     throw std::invalid_argument("Invalid input");
   const std::time_t timestamp = Timestamp(std::string_view(str.data(), start.value() - 2));
   const std::vector<std::string_view> tokens = Split(&str[start.value()], ',');
-  const std::string_view &event_name = tokens.at(0);
+  const std::string event_name{tokens.at(0).data(), tokens.at(0).size()};
   const auto event_kind = MAP.find(event_name);
 
   if (event_kind == MAP.end())
@@ -51,13 +51,15 @@ Event ParseVersion(const std::vector<std::string_view> &tokens) {
 Event ParseZoneChange(const std::vector<std::string_view> &tokens) {
   const unsigned int instance = atoi(tokens[1].data());
   const unsigned int difficulty = atoi(tokens[3].data());
-  const std::string_view name = Trim(tokens[2]);
+  const std::string_view trimmed = Trim(tokens[2]);
+  const std::string name{trimmed.data(), trimmed.size()};
   return ZoneChange{.instance = instance, .difficulty = difficulty, .name = name};
 }
 
 Event ParseMapChange(const std::vector<std::string_view> &tokens) {
   const unsigned int id = atoi(tokens[1].data());
-  const std::string_view name = Trim(tokens[2]);
+  const std::string_view trimmed = Trim(tokens[2]);
+  const std::string name{trimmed.data(), trimmed.size()};
   const unsigned int x0 = atoi(tokens[3].data());
   const unsigned int x1 = atoi(tokens[4].data());
   const unsigned int y0 = atoi(tokens[5].data());
@@ -66,8 +68,10 @@ Event ParseMapChange(const std::vector<std::string_view> &tokens) {
 }
 
 Event ParseUnitDied(const std::vector<std::string_view> &tokens) {
-  const std::string_view id = tokens[5];
-  const std::string_view name = Trim(tokens[6]);
+  const std::string_view idv = tokens[5];
+  const std::string id{idv.data(), idv.size()};
+  const std::string_view trimmed = Trim(tokens[6]);
+  const std::string name{trimmed.data(), trimmed.size()};
   return UnitDied{.id = id, .name = name};
 }
 

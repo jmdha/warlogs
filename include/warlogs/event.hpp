@@ -6,7 +6,7 @@
 
 namespace warlogs {
 struct Undefined {
-  std::string_view event;
+  std::string event;
 };
 
 // COMBAT_LOG_VERSION,X,ADVANCED_LOG_ENABLED,X,BUILD_VERSION,X.X.X,PROJECT_ID,X
@@ -22,20 +22,20 @@ struct Version {
 struct ZoneChange {
   unsigned int instance;   // Instance ID
   unsigned int difficulty; // Difficulty ID
-  std::string_view name;   // Zone name
+  std::string name;   // Zone name
 };
 
 // MAP_CHANGE, uiMapID, uiMapName, x0, x1, y0, y1
 struct MapChange {
   unsigned int id;             // Map ID
-  std::string_view name;       // Map name
+  std::string name;       // Map name
   unsigned int x0, y0, x1, y1; // Map bounds
 };
 
 // UNIT_DIED, ?, ?, ?, ?, unitID, unitName, ?, recapID, uncounsciousOnDeath
 struct UnitDied {
-  std::string_view id;
-  std::string_view name;
+  std::string id;
+  std::string name;
 };
 
 struct PartyKill {};
