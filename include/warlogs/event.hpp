@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ctime>
 #include <string>
 #include <variant>
 
@@ -66,5 +67,7 @@ using Event = std::variant<Undefined, Version, ZoneChange, MapChange, UnitDied, 
                            SpellDamage, SpellPeriodicDamage, SpellPeriodicHeal, SpellAuraApplied,
                            SpellAuraRefresh, SpellAuraRemoved>;
 
-Event Parse(const std::string &);
+std::pair<std::time_t, Event> Parse(const std::string &);
+
+const std::string &Name(const Event &);
 }; // namespace warlogs

@@ -1,4 +1,5 @@
 #include <functional>
+#include <iomanip>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
@@ -22,18 +23,19 @@ const std::unordered_map<std::string_view,
            {"UNIT_DIED", ParseUnitDied},
            {"PARTY_KILL", ParsePartyKill}};
 
-Event Parse(const std::string &str) {
+std::pair<std::time_t, Event> Parse(const std::string &str) {
   const std::optional<std::size_t> start = CharIdx(str, ' ', 3);
   if (!start.has_value())
     throw std::invalid_argument("Invalid input");
+  const std::time_t timestamp = Timestamp(std::string_view(str.data(), start.value() - 2));
   const std::vector<std::string_view> tokens = Split(&str[start.value()], ',');
   const std::string_view &event_name = tokens.at(0);
   const auto event_kind = MAP.find(event_name);
 
   if (event_kind == MAP.end())
-    return Undefined{.event = event_name};
+    return {{}, Undefined{.event = event_name}};
   else
-    return event_kind->second(tokens);
+    return {timestamp, event_kind->second(tokens)};
 }
 
 Event ParseVersion(const std::vector<std::string_view> &tokens) {

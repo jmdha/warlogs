@@ -1,8 +1,10 @@
-#include "warlogs/utils.hpp"
 #include <cstring>
+#include <iostream>
+
+#include "warlogs/utils.hpp"
 
 namespace warlogs {
-std::vector<std::string_view> Split(const std::string_view str, const char delim) {
+std::vector<std::string_view> Split(std::string_view str, const char delim) noexcept {
   std::vector<std::string_view> result;
 
   int indexCommaToLeftOfColumn = 0;
@@ -25,7 +27,7 @@ std::vector<std::string_view> Split(const std::string_view str, const char delim
   return result;
 }
 
-std::optional<std::size_t> CharIdx(const std::string_view str, char ch, unsigned int count) {
+std::optional<std::size_t> CharIdx(std::string_view str, char ch, unsigned int count) noexcept {
   unsigned int found = 0;
 
   for (std::size_t i = 0; i < str.size(); i++)
@@ -36,8 +38,19 @@ std::optional<std::size_t> CharIdx(const std::string_view str, char ch, unsigned
   return {};
 }
 
-std::string_view Trim(const std::string_view str) {
-  return str.substr(1, str.size() - 2);
-}
+std::string_view Trim(std::string_view str) noexcept { return str.substr(1, str.size() - 2); }
 
+std::time_t Timestamp(std::string_view sv) noexcept {
+  int day, month, year, hours, mins, secs;
+  sscanf(sv.data(), "%d/%d/%d %d:%d:%d", &day, &month, &year, &hours, &mins, &secs);
+  std::tm tm = {
+      .tm_sec = secs,
+      .tm_min = mins,
+      .tm_hour = hours + 1,
+      .tm_mday = day,
+      .tm_mon = month - 1,
+      .tm_year = year - 1900,
+  };
+  return std::mktime(&tm);
+}
 } // namespace warlogs

@@ -9,6 +9,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(
     ${PROJECT_NAME}_test
     ${CMAKE_CURRENT_LIST_DIR}/event_parse.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/utils.cpp
 )
 
 target_link_libraries(

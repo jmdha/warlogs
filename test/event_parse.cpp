@@ -7,7 +7,9 @@ TEST(EventParse, Undefined) {
   const std::string str = "0/00/0000 00:00:00.0000  "
                           "THIS_IS_NOT_A_REAL_EVENT";
 
-  const Event event = Parse(str);
+  const std::pair<std::time_t, Event> tevent = Parse(str);
+  const std::time_t &timestamp = tevent.first;
+  const Event& event = tevent.second;
 
   EXPECT_TRUE(std::holds_alternative<Undefined>(event));
   const Undefined unwrapped = std::get<Undefined>(event);
@@ -19,7 +21,9 @@ TEST(EventParse, Version) {
                           "COMBAT_LOG_VERSION,1,ADVANCED_LOG_ENABLED,1,BUILD_"
                           "VERSION,2.3.4,PROJECT_ID,1";
 
-  const Event event = Parse(str);
+  const std::pair<std::time_t, Event> tevent = Parse(str);
+  const std::time_t &timestamp = tevent.first;
+  const Event& event = tevent.second;
 
   EXPECT_TRUE(std::holds_alternative<Version>(event));
   const Version unwrapped = std::get<Version>(event);
@@ -34,7 +38,9 @@ TEST(EventParse, ZoneChange) {
   const std::string str = "0/00/0000 00:00:00.0000  "
                           "ZONE_CHANGE,2652,\"The Stonevault\",23";
 
-  const Event event = Parse(str);
+  const std::pair<std::time_t, Event> tevent = Parse(str);
+  const std::time_t &timestamp = tevent.first;
+  const Event& event = tevent.second;
 
   EXPECT_TRUE(std::holds_alternative<ZoneChange>(event));
   const ZoneChange unwrapped = std::get<ZoneChange>(event);
@@ -47,11 +53,12 @@ TEST(EventParse, UnitDied) {
   const std::string str = "0/00/0000 00:00:00.0000  "
                           "UNIT_DIED,0000000000000000,nil,0x80000000,0x80000000,SOME_ID,\"ABC\",0x512,0x0,1";
 
-  const Event event = Parse(str);
+  const std::pair<std::time_t, Event> tevent = Parse(str);
+  const std::time_t &timestamp = tevent.first;
+  const Event& event = tevent.second;
 
   EXPECT_TRUE(std::holds_alternative<UnitDied>(event));
   const UnitDied unwrapped = std::get<UnitDied>(event);
-  std::cout << unwrapped.id << " " << unwrapped.name << std::endl;
   EXPECT_EQ(unwrapped.id, "SOME_ID");
   EXPECT_EQ(unwrapped.name, "ABC");
 }
