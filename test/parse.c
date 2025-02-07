@@ -38,3 +38,16 @@ UTEST(parse, event_version) {
   EXPECT_EQ(event.version.minor, 0);
   EXPECT_EQ(event.version.patch, 7);
 }
+
+UTEST(parse, event_map_change) {
+  const char *str = "01/01/1970 00:00:00.0000  MAP_CHANGE,2341,\"The Stonevault\",230.000000,-397.083008,503.437256,-437.187256";
+  time_t tt;
+  wl_event event;
+
+  const wl_return_code rc = wl_parse(&tt, &event, str);
+
+  EXPECT_EQ(rc, wl_ok);
+  EXPECT_EQ(wl_map_change, event.kind);
+  EXPECT_EQ(2341, event.map_change.id);
+  EXPECT_STREQ("The Stonevault", event.map_change.name);
+}

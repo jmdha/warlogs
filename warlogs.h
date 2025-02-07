@@ -55,7 +55,6 @@ static const char* WL_EVENT_NAMES[] = {
 };
 
 typedef struct wl_event_undefined {
-    char* str;
 } wl_event_undefined;
 
 typedef struct wl_event_version {
@@ -68,13 +67,13 @@ typedef struct wl_event_version {
 
 typedef struct wl_event_map_change {
     unsigned int id;
-    char*        name;
+    char         name[32];
 } wl_event_map_change;
 
 typedef struct wl_event_zone_change {
     unsigned int instance;
     unsigned int difficulty;
-    char*        name;
+    char         name[32];
 } wl_event_zone_change;
 
 typedef struct wl_event {
@@ -94,7 +93,9 @@ static inline wl_return_code wl_parse_version(wl_event *event, const char* str) 
 }
 
 static inline wl_return_code wl_parse_map_change(wl_event *event, const char* str) {
-
+    const char *format = "%d,\"%[a-zA-Z ]\"";
+    wl_event_map_change *e = &event->map_change;
+    return sscanf(str, format, &e->id, e->name) == 6;
 }
 
 static inline wl_return_code wl_parse_zone_change(wl_event *event, const char* str) {
@@ -123,7 +124,7 @@ static inline wl_return_code wl_parse_timestamp(time_t* timestamp, const char* s
 }
 
 static inline wl_return_code wl_parse(time_t* timestamp, wl_event *event, const char* str) {
-    const char *format = "%*s%*s%*[ ]%[^,],%s";
+    const char *format = "%*s%*s%*[ ]%[^,],%[^\n]";
     char event_name[128];
     char event_fields[128];
     wl_return_code rc;
