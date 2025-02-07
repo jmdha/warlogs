@@ -8,8 +8,9 @@
 
 typedef enum wl_return_code {
     wl_ok,
-    wl_malformed_time_stamp,
-    wl_malformed_event_layout
+    wl_malformed_event_fields,
+    wl_malformed_event_layout,
+    wl_malformed_time_stamp
 } wl_return_code;
 
 typedef enum wl_event_kind {
@@ -86,6 +87,20 @@ typedef struct wl_event {
     };
 } wl_event;
 
+static inline wl_return_code wl_parse_version(wl_event *event, const char* str) {
+    const char *format = "%d,%*[^,],%d,%*[^,],%d.%d.%d,%*d,%*[^,]";
+    wl_event_version *e = &event->version;
+    return sscanf(str, format, &e->log, &e->advanced, &e->major, &e->minor, &e->patch) == 6;
+}
+
+static inline wl_return_code wl_parse_map_change(wl_event *event, const char* str) {
+
+}
+
+static inline wl_return_code wl_parse_zone_change(wl_event *event, const char* str) {
+
+}
+
 static inline wl_event_kind wl_match(const char* str) {
     for (unsigned int i = 0; i < wl_event_max - 1; i++)
         if (strcmp(str, WL_EVENT_NAMES[i]) == 0)
@@ -108,15 +123,35 @@ static inline wl_return_code wl_parse_timestamp(time_t* timestamp, const char* s
 }
 
 static inline wl_return_code wl_parse(time_t* timestamp, wl_event *event, const char* str) {
-    const char *format = "%*s%*s %[^,]%s^,%s";
+    const char *format = "%*s%*s%*[ ]%[^,],%s";
     char event_name[128];
     char event_fields[128];
     wl_return_code rc;
+    printf("%d\n", sscanf(str, format, event_name, event_fields));
     if (sscanf(str, format, event_name, event_fields) != 2)
         return wl_malformed_event_layout;
+    printf("%s %s\n", event_name, event_fields);
     if ((rc = wl_parse_timestamp(timestamp, str)) != wl_ok)
         return rc;
     event->kind = wl_match(event_name);
-    return wl_ok;
+    switch (event->kind) {
+        case wl_version:     return wl_parse_version(event, event_fields);
+        case wl_map_change:  return wl_parse_map_change(event, event_fields);
+        case wl_zone_change: return wl_parse_zone_change(event, event_fields);
+        case wl_unit_died:
+        case wl_party_kill:
+        case wl_spell_cast_success:
+        case wl_spell_summon:
+        case wl_spell_instakill:
+        case wl_spell_energize:
+        case wl_spell_heal:
+        case wl_spell_damage:
+        case wl_spell_periodic_damage:
+        case wl_spell_periodic_heal:
+        case wl_spell_aura_applied:
+        case wl_spell_aura_refresh:
+        case wl_spell_aura_removed:
+        default: return wl_ok;
+        }
 }
 #endif
