@@ -127,10 +127,8 @@ static inline wl_return_code wl_parse(time_t* timestamp, wl_event *event, const 
     char event_name[128];
     char event_fields[128];
     wl_return_code rc;
-    printf("%d\n", sscanf(str, format, event_name, event_fields));
     if (sscanf(str, format, event_name, event_fields) != 2)
         return wl_malformed_event_layout;
-    printf("%s %s\n", event_name, event_fields);
     if ((rc = wl_parse_timestamp(timestamp, str)) != wl_ok)
         return rc;
     event->kind = wl_match(event_name);
