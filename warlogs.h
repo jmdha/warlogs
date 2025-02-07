@@ -62,6 +62,7 @@ typedef struct wl_event_version {
     unsigned int major;
     unsigned int minor;
     unsigned int patch;
+    unsigned int project;
     bool         advanced;
 } wl_event_version;
 
@@ -87,19 +88,24 @@ typedef struct wl_event {
 } wl_event;
 
 static inline wl_return_code wl_parse_version(wl_event *event, const char* str) {
-    const char *format = "%d,%*[^,],%d,%*[^,],%d.%d.%d,%*d,%*[^,]";
+    const char *format = "%d,ADVANCED_LOG_ENABLED,%d,BUILD_VERSION,%d.%d.%d,PROJECT_ID,%d";
     wl_event_version *e = &event->version;
-    return sscanf(str, format, &e->log, &e->advanced, &e->major, &e->minor, &e->patch) == 6;
+    return sscanf(str, format, &e->log, &e->advanced, &e->major, &e->minor, &e->patch, &e->project) == 6
+           ? wl_ok : wl_malformed_event_fields;
 }
 
 static inline wl_return_code wl_parse_map_change(wl_event *event, const char* str) {
     const char *format = "%d,\"%[a-zA-Z ]\"";
     wl_event_map_change *e = &event->map_change;
-    return sscanf(str, format, &e->id, e->name) == 6;
+    return sscanf(str, format, &e->id, e->name) == 2
+           ? wl_ok : wl_malformed_event_fields;
 }
 
 static inline wl_return_code wl_parse_zone_change(wl_event *event, const char* str) {
-
+    const char *format = "%d,\"%[a-zA-Z0-9 ]\",%d";
+    wl_event_zone_change *e = &event->zone_change;
+    return sscanf(str, format, &e->instance, e->name, &e->difficulty) == 3
+           ? wl_ok : wl_malformed_event_fields;
 }
 
 static inline wl_event_kind wl_match(const char* str) {

@@ -51,3 +51,17 @@ UTEST(parse, event_map_change) {
   EXPECT_EQ(2341, event.map_change.id);
   EXPECT_STREQ("The Stonevault", event.map_change.name);
 }
+
+UTEST(parse, event_zone_change) {
+  const char *str = "01/01/1970 00:00:00.0000  ZONE_CHANGE,2652,\"The Stonevault\",23";
+  time_t tt;
+  wl_event event;
+
+  const wl_return_code rc = wl_parse(&tt, &event, str);
+
+  EXPECT_EQ(rc, wl_ok);
+  EXPECT_EQ(wl_zone_change, event.kind);
+  EXPECT_EQ(2652, event.zone_change.instance);
+  EXPECT_EQ(23, event.zone_change.difficulty);
+  EXPECT_STREQ("The Stonevault", event.zone_change.name);
+}
