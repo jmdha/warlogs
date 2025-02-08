@@ -124,7 +124,7 @@ static inline wl_return_code wl_parse_unit_died(wl_event *event, const char* str
 static inline wl_event_kind wl_match(const char* str) {
     for (unsigned int i = 0; i < wl_event_max - 1; i++)
         if (strcmp(str, WL_EVENT_NAMES[i]) == 0)
-            return i;
+            return (wl_event_kind) i;
     return wl_undefined;
 }
 
