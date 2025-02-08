@@ -145,7 +145,7 @@ static inline wl_return_code wl_parse_timestamp(time_t* timestamp, const char* s
 static inline wl_return_code wl_parse(time_t* timestamp, wl_event *event, const char* str) {
     const char *format = "%*s%*s%*[ ]%[^,],%[^\n]";
     char event_name[128];
-    char event_fields[128];
+    char event_fields[4096];
     wl_return_code rc;
     if (sscanf(str, format, event_name, event_fields) != 2)
         return wl_malformed_event_layout;
