@@ -15,6 +15,9 @@ typedef enum wl_return_code {
 
 typedef enum wl_event_kind {
     wl_version,
+    wl_challenge_mode_start,
+    wl_challenge_mode_end,
+    wl_combatant_info,
     wl_map_change,
     wl_zone_change,
     wl_unit_died,
@@ -36,6 +39,9 @@ typedef enum wl_event_kind {
 
 static const char* WL_EVENT_NAMES[] = {
     "COMBAT_LOG_VERSION",
+    "CHALLENGE_MODE_START",
+    "CHALLENGE_MODE_END",
+    "COMBATANT_INFO",
     "MAP_CHANGE",
     "ZONE_CHANGE",
     "UNIT_DIED",
