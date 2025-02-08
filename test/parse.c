@@ -12,17 +12,6 @@ UTEST(parse, timestamp) {
   EXPECT_EQ(tt, 0);
 }
 
-UTEST(parse, event_kind) {
-  const char *str = "01/01/1970 00:00:00.0000 UNIT_DIED,...";
-  time_t tt;
-  wl_event event;
-
-  const wl_return_code rc = wl_parse(&tt, &event, str);
-
-  EXPECT_EQ(rc, wl_ok);
-  EXPECT_EQ(event.kind, wl_unit_died);
-}
-
 UTEST(parse, event_version) {
   const char *str = "01/01/1970 00:00:00.0000  COMBAT_LOG_VERSION,22,ADVANCED_LOG_ENABLED,1,BUILD_VERSION,11.0.7,PROJECT_ID,1";
   time_t tt;
@@ -64,4 +53,17 @@ UTEST(parse, event_zone_change) {
   EXPECT_EQ(2652, event.zone_change.instance);
   EXPECT_EQ(23, event.zone_change.difficulty);
   EXPECT_STREQ("The Stonevault", event.zone_change.name);
+}
+
+UTEST(parse, event_unit_died) {
+  const char *str = "01/01/1970 00:00:00.0000  UNIT_DIED,0000000000000000,nil,0x80000000,0x80000000,Creature-0-4249-2652-10634-224516-00000A5D36,\"Skardyn Invader\",0xa48,0x0,0";
+  time_t tt;
+  wl_event event;
+
+  const wl_return_code rc = wl_parse(&tt, &event, str);
+
+  EXPECT_EQ(rc, wl_ok);
+  EXPECT_EQ(wl_unit_died, event.kind);
+  EXPECT_STREQ("Creature-0-4249-2652-10634-224516-00000A5D36", event.unit_died.id);
+  EXPECT_STREQ("Skardyn Invader", event.unit_died.name);
 }

@@ -68,14 +68,19 @@ typedef struct wl_event_version {
 
 typedef struct wl_event_map_change {
     unsigned int id;
-    char         name[32];
+    char         name[128];
 } wl_event_map_change;
 
 typedef struct wl_event_zone_change {
     unsigned int instance;
     unsigned int difficulty;
-    char         name[32];
+    char         name[128];
 } wl_event_zone_change;
+
+typedef struct wl_event_unit_died {
+    char id[128];
+    char name[128];
+} wl_event_unit_died;
 
 typedef struct wl_event {
     wl_event_kind kind;
@@ -84,6 +89,7 @@ typedef struct wl_event {
         wl_event_version     version;
         wl_event_map_change  map_change;
         wl_event_zone_change zone_change;
+        wl_event_unit_died   unit_died;
     };
 } wl_event;
 
@@ -105,6 +111,13 @@ static inline wl_return_code wl_parse_zone_change(wl_event *event, const char* s
     const char *format = "%d,\"%[a-zA-Z0-9 ]\",%d";
     wl_event_zone_change *e = &event->zone_change;
     return sscanf(str, format, &e->instance, e->name, &e->difficulty) == 3
+           ? wl_ok : wl_malformed_event_fields;
+}
+
+static inline wl_return_code wl_parse_unit_died(wl_event *event, const char* str) {
+    const char *format = "%*[^,],%*[^,],%*[^,],%*[^,],%[^,],\"%[^\"]";
+    wl_event_unit_died *e = &event->unit_died;
+    return sscanf(str, format, e->id, e->name) == 2
            ? wl_ok : wl_malformed_event_fields;
 }
 
@@ -143,7 +156,7 @@ static inline wl_return_code wl_parse(time_t* timestamp, wl_event *event, const 
         case wl_version:     return wl_parse_version(event, event_fields);
         case wl_map_change:  return wl_parse_map_change(event, event_fields);
         case wl_zone_change: return wl_parse_zone_change(event, event_fields);
-        case wl_unit_died:
+        case wl_unit_died:   return wl_parse_unit_died(event, event_fields);
         case wl_party_kill:
         case wl_spell_cast_success:
         case wl_spell_summon:
