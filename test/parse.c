@@ -28,6 +28,39 @@ UTEST(parse, event_version) {
   EXPECT_EQ(event.version.patch, 7);
 }
 
+UTEST(parse, encounter_start) {
+  const char *str = "01/01/1970 00:00:00.0000  ENCOUNTER_START,1146,\"Randolph Moloch\",1,5,34";
+  time_t tt;
+  wl_event event;
+
+  const wl_return_code rc = wl_parse(&tt, &event, str);
+
+  EXPECT_EQ(rc, wl_ok);
+  EXPECT_EQ(event.kind, wl_encounter_start);
+  EXPECT_EQ(event.encounter_start.encounter, 1146);
+  EXPECT_EQ(event.encounter_start.difficulty, 1);
+  EXPECT_EQ(event.encounter_start.group_size, 5);
+  EXPECT_EQ(event.encounter_start.instance, 34);
+  EXPECT_STREQ(event.encounter_start.name, "Randolph Moloch");
+}
+
+UTEST(parse, encounter_end) {
+  const char *str = "01/01/1970 00:00:00.0000  ENCOUNTER_END,2435,\"Sylvanas Windrunner\",15,16,1,671425";
+  time_t tt;
+  wl_event event;
+
+  const wl_return_code rc = wl_parse(&tt, &event, str);
+
+  EXPECT_EQ(rc, wl_ok);
+  EXPECT_EQ(event.kind, wl_encounter_end);
+  EXPECT_EQ(event.encounter_end.encounter, 2435);
+  EXPECT_EQ(event.encounter_end.difficulty, 15);
+  EXPECT_EQ(event.encounter_end.group_size, 16);
+  EXPECT_EQ(event.encounter_end.success, true);
+  EXPECT_EQ(event.encounter_end.time, 671425);
+  EXPECT_STREQ(event.encounter_start.name, "Sylvanas Windrunner");
+}
+
 UTEST(parse, event_map_change) {
   const char *str = "01/01/1970 00:00:00.0000  MAP_CHANGE,2341,\"The Stonevault\",230.000000,-397.083008,503.437256,-437.187256";
   time_t tt;
