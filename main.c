@@ -41,6 +41,37 @@ static const char* schema =
 	"	success    integer not null,"
 	"	name       text not null"
 	");"
+	"create table if not exists wl_map_change ("
+	"	id         integer primary key,"
+	"	timestamp  integer not null,"
+	"	instance   integer not null,"
+	"	name       text not null"
+	");"
+	"create table if not exists wl_zone_change ("
+	"	id         integer primary key,"
+	"	timestamp  integer not null,"
+	"	instance   integer not null,"
+	"	difficulty integer not null,"
+	"	name       text not null"
+	");"
+	"create table if not exists wl_unit_died ("
+	"	id         integer primary key,"
+	"	timestamp  integer not null,"
+	"	guid       text not null,"
+	"	name       text not null"
+	");"
+	"create table if not exists wl_spell_damage ("
+	"	id          integer primary key,"
+	"	timestamp   integer not null,"
+	"	source_guid text not null,"
+	"	source_name text not null,"
+	"	target_guid text not null,"
+	"	target_name text not null,"
+	"	spell_id    integer not null,"
+	"	spell_name  text not null,"
+	"	damage_raw  integer not null,"
+	"	damage      integer not null"
+	");"
 	"";
 
 static sqlite3*      db;
@@ -96,7 +127,7 @@ static sqlite3_stmt* st_spell_aura_removed;
         }                                                            \
     } while (0)
 
-int insert_version(time_t ts, const wl_event* e) {
+int insert_version(int64_t ts, const wl_event* e) {
 	sqlite3_reset(st_version);
 	BIND_INT64(db, st_version, 1, ts);
 	BIND_INT(db,   st_version, 2, e->version.log);
@@ -108,7 +139,7 @@ int insert_version(time_t ts, const wl_event* e) {
 	return sqlite3_step(st_version);
 }
 
-int insert_encounter_start(time_t ts, const wl_event* e) {
+int insert_encounter_start(int64_t ts, const wl_event* e) {
 	sqlite3_reset(st_encounter_start);
 	BIND_INT64(db, st_encounter_start, 1, ts);
 	BIND_INT(db,   st_encounter_start, 2, e->encounter_start.encounter);
@@ -119,7 +150,7 @@ int insert_encounter_start(time_t ts, const wl_event* e) {
 	return sqlite3_step(st_encounter_start);
 }
 
-int insert_encounter_end(time_t ts, const wl_event* e) {
+int insert_encounter_end(int64_t ts, const wl_event* e) {
 	sqlite3_reset(st_encounter_end);
 	BIND_INT64(db, st_encounter_end, 1, ts);
 	BIND_INT(db,   st_encounter_end, 2, e->encounter_end.encounter);
@@ -131,12 +162,55 @@ int insert_encounter_end(time_t ts, const wl_event* e) {
 	return sqlite3_step(st_encounter_end);
 }
 
-int insert(time_t ts, const wl_event* e) {
+int insert_map_change(int64_t ts, const wl_event* e) {
+	sqlite3_reset(st_map_change);
+	BIND_INT64(db, st_map_change, 1, ts);
+	BIND_INT(db,   st_map_change, 2, e->map_change.instance);
+	BIND_TEXT(db,  st_map_change, 3, e->map_change.name);
+	return sqlite3_step(st_map_change);
+}
+
+int insert_zone_change(int64_t ts, const wl_event* e) {
+	sqlite3_reset(st_zone_change);
+	BIND_INT64(db, st_zone_change, 1, ts);
+	BIND_INT(db,   st_zone_change, 2, e->zone_change.instance);
+	BIND_INT(db,   st_zone_change, 3, e->zone_change.difficulty);
+	BIND_TEXT(db,  st_zone_change, 4, e->zone_change.name);
+	return sqlite3_step(st_zone_change);
+}
+
+int insert_unit_died(int64_t ts, const wl_event* e) {
+	sqlite3_reset(st_unit_died);
+	BIND_INT64(db, st_unit_died, 1, ts);
+	BIND_TEXT(db,  st_unit_died, 2, e->unit_died.guid);
+	BIND_TEXT(db,  st_unit_died, 3, e->unit_died.name);
+	return sqlite3_step(st_unit_died);
+}
+
+int insert_spell_damage(int64_t ts, const wl_event* e) {
+	sqlite3_reset(st_spell_damage);
+	BIND_INT64(db, st_spell_damage, 1, ts);
+	BIND_TEXT(db,  st_spell_damage, 2, e->spell_damage.source_guid);
+	BIND_TEXT(db,  st_spell_damage, 3, e->spell_damage.source_name);
+	BIND_TEXT(db,  st_spell_damage, 4, e->spell_damage.target_guid);
+	BIND_TEXT(db,  st_spell_damage, 5, e->spell_damage.target_name);
+	BIND_INT(db,   st_spell_damage, 6, e->spell_damage.spell_id);
+	BIND_TEXT(db,  st_spell_damage, 7, e->spell_damage.spell_name);
+	BIND_INT(db,   st_spell_damage, 8, e->spell_damage.damage_raw);
+	BIND_INT(db,   st_spell_damage, 9, e->spell_damage.damage);
+	return sqlite3_step(st_spell_damage);
+}
+
+int insert(int64_t ts, const wl_event* e) {
 	switch (e->kind) {
 		case wl_version:         return insert_version(ts, e);
 		case wl_encounter_start: return insert_encounter_start(ts, e);
 		case wl_encounter_end:   return insert_encounter_end(ts, e);
-		case wl_undefined:
+		case wl_map_change:      return insert_map_change(ts, e);
+		case wl_zone_change:     return insert_zone_change(ts, e);
+		case wl_unit_died:       return insert_unit_died(ts, e);
+		case wl_spell_periodic_damage:
+		case wl_spell_damage:    return insert_spell_damage(ts, e);
 		default:
 	}
 	return SQLITE_OK;
@@ -207,15 +281,49 @@ int main(int argc, char** argv) {
 		NULL
 	);
 
+	sqlite3_prepare_v2(
+		db,
+		"insert into wl_map_change (timestamp,instance,name) values (?,?,?)",
+		-1,
+		&st_map_change,
+		NULL
+	);
+
+	sqlite3_prepare_v2(
+		db,
+		"insert into wl_zone_change (timestamp,instance,difficulty,name) values (?,?,?,?)",
+		-1,
+		&st_zone_change,
+		NULL
+	);
+
+	sqlite3_prepare_v2(
+		db,
+		"insert into wl_unit_died (timestamp,guid,name) values (?,?,?)",
+		-1,
+		&st_unit_died,
+		NULL
+	);
+
+	sqlite3_prepare_v2(
+		db,
+		"insert into wl_spell_damage (timestamp,source_guid,source_name,target_guid,target_name,spell_id,spell_name,damage_raw,damage) values (?,?,?,?,?,?,?,?,?)",
+		-1,
+		&st_spell_damage,
+		NULL
+	);
+
 	sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
 
 	const char* ptr = buf;
 	while (ptr && *ptr != '\0') {
-		time_t   ts;
+		int64_t  ts;
 		wl_event e;
 		
+		const char* optr = ptr;
 		ptr = wl_parse(&ts, &e, ptr);
 		if (!ptr && wl_error) {
+			printf("%.*s\n", strchr(optr, '\n') - optr, optr);
 			fprintf(stderr, "%s - %.24s: failed to parse file", wl_error, wl_error_ptr);
 			return 1;
 		}
