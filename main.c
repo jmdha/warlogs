@@ -251,11 +251,8 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	sqlite3_exec(db, "pragma journal_mode=off",       NULL, NULL, NULL);
-	sqlite3_exec(db, "pragma synchronous=off",        NULL, NULL, NULL);
-	sqlite3_exec(db, "pragma cache_size=-64000",      NULL, NULL, NULL);
-	sqlite3_exec(db, "pragma locking_mode=exclusive", NULL, NULL, NULL);
-	sqlite3_exec(db, schema,                          NULL, NULL, NULL);
+	sqlite3_exec(db, "pragma cache_size=-64000", NULL, NULL, NULL);
+	sqlite3_exec(db, schema,                     NULL, NULL, NULL);
 
 	sqlite3_prepare_v2(
 		db,
