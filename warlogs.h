@@ -1,349 +1,211 @@
 #ifndef WARLOGS_H
 #define WARLOGS_H
 
+#include <limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
+#define WL_MAX_INT 32
+#define WL_MAX_GUID 32
+#define WL_MAX_NAME 64
+
+typedef enum wl_error {
+	wl_ok,
+	wl_invalid_num,
+	wl_invalid_year,
+	wl_invalid_month,
+	wl_invalid_day,
+	wl_invalid_hour,
+	wl_invalid_min,
+	wl_invalid_sec,
+	wl_invalid_ns,
+	wl_invalid_ts_delim,
+	wl_invalid_date,
+} wl_error;
+
 typedef enum wl_event_kind {
-	wl_version,
-	wl_challenge_mode_start,
-	wl_challenge_mode_end,
-	wl_encounter_start,
-	wl_encounter_end,
-	wl_combatant_info,
-	wl_map_change,
-	wl_zone_change,
-	wl_unit_died,
-	wl_party_kill,
-	wl_spell_cast_success,
-	wl_spell_summon,
-	wl_spell_instakill,
-	wl_spell_energize,
-	wl_spell_heal,
-	wl_spell_damage,
-	wl_spell_periodic_damage,
-	wl_spell_periodic_heal,
-	wl_spell_aura_applied,
-	wl_spell_aura_refresh,
-	wl_spell_aura_removed,
-	wl_undefined,
-	wl_event_max,
+	wl_event_unknown
 } wl_event_kind;
-
-static const char* WL_EVENT_NAMES[] = {
-	"COMBAT_LOG_VERSION",
-	"CHALLENGE_MODE_START",
-	"CHALLENGE_MODE_END",
-	"ENCOUNTER_START",
-	"ENCOUNTER_END",
-	"COMBATANT_INFO",
-	"MAP_CHANGE",
-	"ZONE_CHANGE",
-	"UNIT_DIED",
-	"PARTY_KILL",
-	"SPELL_CAST_SUCCESS",
-	"SPELL_SUMMON",
-	"SPELL_INSTAKILL",
-	"SPELL_ENERGIZE",
-	"SPELL_HEAL",
-	"SPELL_DAMAGE",
-	"SPELL_PERIODIC_DAMAGE",
-	"SPELL_PERIODIC_HEAL",
-	"SPELL_AURA_APPLIED",
-	"SPELL_AURA_REFRESH",
-	"SPELL_AURA_REMOVED",
-	"UNDEFINED"
-};
-
-static const char* wl_error;
-static const char* wl_error_ptr;
-
-typedef struct wl_event_version {
-	unsigned int log;
-	unsigned int major;
-	unsigned int minor;
-	unsigned int patch;
-	unsigned int project;
-	unsigned int advanced;
-} wl_event_version;
-
-typedef struct wl_event_encounter_start {
-	unsigned int encounter;
-	unsigned int difficulty;
-	unsigned int group_size;
-	unsigned int instance;
-	char         name[128];
-} wl_event_encounter_start;
-
-typedef struct wl_event_encounter_end {
-	unsigned int encounter;
-	unsigned int difficulty;
-	unsigned int group_size;
-	unsigned int duration;
-	unsigned int success;
-	char         name[128];
-} wl_event_encounter_end;
-
-typedef struct wl_event_map_change {
-	unsigned int instance;
-	char         name[128];
-} wl_event_map_change;
-
-typedef struct wl_event_zone_change {
-	unsigned int instance;
-	unsigned int difficulty;
-	char         name[128];
-} wl_event_zone_change;
-
-typedef struct wl_event_unit_died {
-	char guid[128];
-	char name[128];
-} wl_event_unit_died;
-
-typedef struct wl_event_spell_damage {
-	char source_guid[128];
-	char source_name[128];
-	char target_guid[128];
-	char target_name[128];
-	int  spell_id;
-	char spell_name[128];
-	int  damage_raw;
-	int  damage;
-} wl_event_spell_damage;
 
 typedef struct wl_event {
 	wl_event_kind kind;
-	union {
-		wl_event_version               version;
-		wl_event_encounter_start       encounter_start;
-		wl_event_encounter_end         encounter_end;
-		wl_event_map_change            map_change;
-		wl_event_zone_change           zone_change;
-		wl_event_unit_died             unit_died;
-		wl_event_spell_damage          spell_damage;
-	};
 } wl_event;
 
-static inline int wl_is_sentinel(char c, char sentinel) {
-	return c == sentinel || c == '\r' || c == '\n' || c == '\0';
+// assumes str >= 2
+static int wl_parse_int2(
+	const char* str
+) {
+	unsigned v0 = (unsigned)(str[0] - '0');
+	unsigned v1 = (unsigned)(str[1] - '0');
+	if (v0 > 9 || v1 > 9)
+		return INT_MAX;
+	return 10 * v0 + v1;
 }
 
-static const char* wl_parse_str(char* out, const char* str, char sentinel) {
-	bool qoute = *str == '"';
-	if (qoute) str++;
-	do {
-		if (qoute && *str == '"') {
-			str++;
-			break;
-		}
-		if (!qoute && wl_is_sentinel(*str, sentinel))
-			break;
-		*out++ = *str++;
-	} while (true);
-	if (!*str) { wl_error = "unexpected eof"; wl_error_ptr = str; return NULL; }
-	*out = '\0';
-	return str + 1;
+// assumes str >= 4
+static int wl_parse_int4(
+	const char* str
+) {
+	unsigned v0 = (unsigned)(str[0] - '0');
+	unsigned v1 = (unsigned)(str[1] - '0');
+	unsigned v2 = (unsigned)(str[2] - '0');
+	unsigned v3 = (unsigned)(str[3] - '0');
+	if (v0 > 9 || v1 > 9 || v2 > 9 || v3 > 9)
+		return INT_MAX;
+	return 1000 * v0 + 100 * v1 + 10 * v2 + v3;
 }
 
-static const char* wl_parse_int(int* val, const char* str, char sentinel) {
-	int neg = 0;
-	int ret = 0;
-	if (*str == '-') { neg = 1; str++; }
-	while (!wl_is_sentinel(*str, sentinel)) {
-		if (*str < '0' || *str > '9') {
-			wl_error = "non-numeric character";
-			wl_error_ptr = str;
-			return NULL;
-		}
-		ret = ret * 10 + (*str++ - '0');
+static int wl_parse_uint(
+	const char** str,
+	size_t*      len
+) {
+	const size_t ilen = *len;
+	int val = 0;
+	while (*len > 0 && **str >= '0' && **str <= '9') {
+		const int n = **str - '0';
+		if (val > (INT_MAX - n) / 10)
+			return INT_MAX;
+		val = 10 * val + n;
+		(*str)++;
+		(*len)--;
 	}
-	if (!*str) { wl_error = "unexpected eof"; wl_error_ptr = str; return NULL; }
-	*val = neg ? -ret : ret;
-	return str + 1;
+	if (ilen == *len)
+		return INT_MAX;
+	return val;
 }
 
-static const char* wl_parse_skip(const char* str, char sentinel) {
-	while (!wl_is_sentinel(*str, sentinel)) str++;
-	if (!*str) { wl_error = "unexpected eof"; wl_error_ptr = str; return NULL; }
-	return str + 1;
+static int64_t wl_days_from_civil(int y, int m, int d) {
+    y -= m <= 2;
+    const int era = (y >= 0 ? y : y - 399) / 400;
+    const unsigned yoe = (unsigned)(y - era * 400);
+    const unsigned doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+    const unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    return (int64_t)era * 146097 + (int64_t)doe - 719468;
 }
 
-static const char* wl_parse_timestamp(int64_t* ts, const char* str) {
-	int day, month, year, hour, min, sec, ns;
-	if (!(str = wl_parse_int(&month, str, '/'))) return NULL;
-	if (!(str = wl_parse_int(&day,   str, '/'))) return NULL;
-	if (!(str = wl_parse_int(&year,  str, ' '))) return NULL;
-	if (!(str = wl_parse_int(&hour,  str, ':'))) return NULL;
-	if (!(str = wl_parse_int(&min,   str, ':'))) return NULL;
-	if (!(str = wl_parse_int(&sec,   str, '.'))) return NULL;
-	if (!(str = wl_parse_int(&ns,    str, ' '))) return NULL;
-	*ts = (int64_t)(year  - 1970) * 31622400000LL +
-	      (int64_t)(month - 1)    * 2678400000LL +
-	      (int64_t)(day   - 1)    * 86400000LL +
-	      (int64_t)(hour)         * 3600000LL +
-	      (int64_t)(min)          * 60000LL +
-	      (int64_t)(sec)          * 1000LL +
-	      (int64_t)(ns);
-	return str;
+// Parses date format of x/y/z
+// where x is month, y is day, z is year
+// non-fixed width format
+static wl_error wl_parse_date(
+	int*         year,
+	int*         month,
+	int*         day,
+	const char** str,
+	size_t*      len
+) {
+	*month = wl_parse_uint(str, len);
+	if (*month == INT_MAX)
+		return wl_invalid_date;
+	if (*len == 0 || **str != '/')
+		return wl_invalid_date;
+	if (*month < 1 || *month > 12)
+		return wl_invalid_date;
+
+	(*str)++;
+	(*len)--;
+
+	*day = wl_parse_uint(str, len);
+	if (*day == INT_MAX)
+		return wl_invalid_date;
+	if (*len == 0 || **str != '/')
+		return wl_invalid_date;
+	if (*day < 1 || *day > 31)
+		return wl_invalid_date;
+
+	(*str)++;
+	(*len)--;
+
+	if (*len < 4)
+		return wl_invalid_date;
+
+	// year is technically non-fixed width
+	// however realistically it will always be width 4
+	*year = wl_parse_int4(str[0]);
+	if (*year == INT_MAX)
+		return wl_invalid_date;
+	if (*year < 1970 || *year > 2050)
+		return wl_invalid_date;
+
+	*str += 4;
+	*len -= 4;
+
+	return wl_ok;
 }
 
-static const char* wl_parse_version(wl_event* e, const char* str) {
-	if (!(str = wl_parse_int(&e->version.log,      str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                     str, ',')))  return NULL;
-	if (!(str = wl_parse_int(&e->version.advanced, str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                     str, ',')))  return NULL;
-	if (!(str = wl_parse_int(&e->version.major,    str, '.')))  return NULL;
-	if (!(str = wl_parse_int(&e->version.minor,    str, '.')))  return NULL;
-	if (!(str = wl_parse_int(&e->version.patch,    str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                     str, ',')))  return NULL;
-	if (!(str = wl_parse_int(&e->version.project,  str, '\n'))) return NULL;
-	return str;
+// Parses time format of xx:yy:zz:qqqq
+// where x is hour, y is min, z is sec, and q is ns
+// fixed width format
+static wl_error wl_parse_time(
+	int*        hour,
+	int*        min,
+	int*        sec,
+	int*        f,
+	const char* str
+) {
+	if (str[2] != ':' || str[5] != ':' || str[8] != '.')
+		return wl_invalid_date;
+
+	*hour = wl_parse_int2(&str[0]);
+	*min  = wl_parse_int2(&str[3]);
+	*sec  = wl_parse_int2(&str[6]);
+	*f    = wl_parse_int4(&str[9]);
+
+	if (*hour == INT_MAX || *min == INT_MAX || *sec == INT_MAX || *f == INT_MAX)
+		return wl_invalid_date;
+	if (*hour < 0 || *hour > 23 || *min < 0 || *min > 59 || *sec < 0 || *sec > 59 || *f < 0 || *f > 9999)
+		return wl_invalid_date;
+
+	return wl_ok;
 }
 
-static const char* wl_parse_encounter_start(wl_event* e, const char* str) {
-	if (!(str = wl_parse_int(&e->encounter_start.encounter,  str, ',')))  return NULL;
-	if (!(str = wl_parse_str(e->encounter_start.name,        str, ',')))  return NULL;
-	if (!(str = wl_parse_int(&e->encounter_start.difficulty, str, ',')))  return NULL;
-	if (!(str = wl_parse_int(&e->encounter_start.group_size, str, ',')))  return NULL;
-	if (!(str = wl_parse_int(&e->encounter_start.instance,   str, ',')))  return NULL;
-	return str;
+static wl_error wl_parse_timestamp(
+	int64_t*      ts,
+	const char** str,
+	size_t*      len
+) {
+	int y, m, d, H, M, S, F;
+	wl_error err;
+
+	err = wl_parse_date(&y, &m, &d, str, len);
+	if (err != wl_ok)
+		return err;
+
+	if (*len < 14)
+		return wl_invalid_date;
+
+	(*str)++;
+	(*len)--;
+
+	err = wl_parse_time(&H, &M, &S, &F, *str);
+	if (err != wl_ok)
+		return err;
+
+	*len -= 13;
+	*str += 13;
+
+        *ts = wl_days_from_civil(y,m,d)*86400LL + H*3600 + M*60 + S;
+	*ts = (*ts * 1000000000LL) + ((int64_t)F * 100000LL);
+
+	return wl_ok;
 }
 
-static const char* wl_parse_encounter_end(wl_event* e, const char* str) {
-	if (!(str = wl_parse_int(&e->encounter_end.encounter,  str, ',')))  return NULL;
-	if (!(str = wl_parse_str(e->encounter_end.name,        str, ',')))  return NULL;
-	if (!(str = wl_parse_int(&e->encounter_end.difficulty, str, ',')))  return NULL;
-	if (!(str = wl_parse_int(&e->encounter_end.group_size, str, ',')))  return NULL;
-	if (!(str = wl_parse_int(&e->encounter_end.success,    str, ',')))  return NULL;
-	if (!(str = wl_parse_int(&e->encounter_end.duration,   str, ',')))  return NULL;
-	return str;
-}
+static wl_error wl_parse(
+	int64_t*     ts,
+	wl_event*   e,
+	const char* str,
+	size_t      len
+) {
+	wl_error err;
 
-static const char* wl_parse_map_change(wl_event* e, const char* str) {
-	if (!(str = wl_parse_int(&e->map_change.instance, str, ',')))  return NULL;
-	if (!(str = wl_parse_str(e->map_change.name,      str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                        str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                        str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                        str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                        str, '\n'))) return NULL;
-	return str;
-}
+	err = wl_parse_timestamp(ts, &str, &len);
+	if (err != wl_ok)
+		return err;
 
-static const char* wl_parse_zone_change(wl_event* e, const char* str) {
-	if (!(str = wl_parse_int(&e->zone_change.instance,   str, ','))) return NULL;
-	if (!(str = wl_parse_str(e->zone_change.name,        str, ','))) return NULL;
-	if (!(str = wl_parse_int(&e->zone_change.difficulty, str, ','))) return NULL;
-	return str;
-}
-
-static const char* wl_parse_unit_died(wl_event* e, const char* str) {
-	if (!(str = wl_parse_skip(                        str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                        str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                        str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                        str, ',')))  return NULL;
-	if (!(str = wl_parse_str(e->unit_died.guid,       str, ',')))  return NULL;
-	if (!(str = wl_parse_str(e->unit_died.name,       str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                        str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                        str, ',')))  return NULL;
-	if (!(str = wl_parse_skip(                        str, ',')))  return NULL;
-	return str;
-}
-
-static const char* wl_parse_spell_damage(wl_event* e, const char* str) {
-	wl_event_spell_damage* E = &e->spell_damage;
-	if (!(str = wl_parse_str(E->source_guid,  str, ',')))   return NULL;
-	if (!(str = wl_parse_str(E->source_name,  str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_str(E->target_guid,  str, ',')))   return NULL;
-	if (!(str = wl_parse_str(E->target_name,  str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_int(&E->spell_id,    str, ',')))   return NULL;
-	if (!(str = wl_parse_str(E->spell_name,   str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_int(&E->damage,      str, ',')))   return NULL;
-	if (!(str = wl_parse_int(&E->damage_raw,  str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, ',')))   return NULL;
-	if (!(str = wl_parse_skip(                str, '\n')))  return NULL;
-	return str;
-}
-
-static inline wl_event_kind wl_match(const char* str) {
-	for (unsigned int i = 0; i < wl_event_max - 1; i++)
-		if (strcmp(str, WL_EVENT_NAMES[i]) == 0)
-			return (wl_event_kind) i;
-	return wl_undefined;
-}
-
-static const char* wl_parse_event(wl_event* e, const char* str) {
-	char name[256];
-	const char* ptr = str;
-	if (!(ptr = wl_parse_str(name, ptr, ','))) return NULL;
-
-	e->kind = wl_match(name);
-	switch (e->kind) {
-	case wl_version:               return wl_parse_version(e, ptr);
-	case wl_encounter_start:       return wl_parse_encounter_start(e, ptr);
-	case wl_encounter_end:         return wl_parse_encounter_end(e, ptr);
-	case wl_map_change:            return wl_parse_map_change(e, ptr);
-	case wl_zone_change:           return wl_parse_zone_change(e, ptr);
-	case wl_unit_died:             return wl_parse_unit_died(e, ptr);
-	case wl_spell_periodic_damage:
-	case wl_spell_damage:          return wl_parse_spell_damage(e, ptr);
-	default:
-			  e->kind = wl_undefined;
-			  return strchr(str, '\n');
-			  wl_error = "unknown event";
-			  wl_error_ptr = str;
-			  return NULL;
-	}
-}
-
-static const char* wl_parse(int64_t* ts, wl_event *e, const char* str) {
-	wl_error     = NULL;
-	wl_error_ptr = NULL;
-
-	str = wl_parse_timestamp(ts, str);
-	if (!str) return NULL;
-
-	// timestamp is followed by 2 spaces, skip those
-	while (*str == ' ') str++;
-
-	str = wl_parse_event(e, str);
-	if (!str) return NULL;
-
-	// allows both \n and \0 terminated strings
-	if (*str == '\n') str++;
-
-	return str;
+	return wl_ok;
 }
 
 #endif
