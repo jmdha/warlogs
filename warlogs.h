@@ -35,46 +35,47 @@ typedef struct wl_event {
 	wl_event_kind kind;
 } wl_event;
 
-// assumes str >= 2
+// Each digit is validated before the next byte is read,
+// so a NUL terminator is never read past
 static int wl_parse_int2(
 	const char* str
 ) {
 	unsigned v0 = (unsigned)(str[0] - '0');
+	if (v0 > 9) return INT_MAX;
 	unsigned v1 = (unsigned)(str[1] - '0');
-	if (v0 > 9 || v1 > 9)
-		return INT_MAX;
+	if (v1 > 9) return INT_MAX;
 	return 10 * v0 + v1;
 }
 
-// assumes str >= 4
 static int wl_parse_int4(
 	const char* str
 ) {
 	unsigned v0 = (unsigned)(str[0] - '0');
+	if (v0 > 9) return INT_MAX;
 	unsigned v1 = (unsigned)(str[1] - '0');
+	if (v1 > 9) return INT_MAX;
 	unsigned v2 = (unsigned)(str[2] - '0');
+	if (v2 > 9) return INT_MAX;
 	unsigned v3 = (unsigned)(str[3] - '0');
-	if (v0 > 9 || v1 > 9 || v2 > 9 || v3 > 9)
-		return INT_MAX;
+	if (v3 > 9) return INT_MAX;
 	return 1000 * v0 + 100 * v1 + 10 * v2 + v3;
 }
 
+// NUL is not a digit, so the loop halts at the terminator
 static int wl_parse_uint(
-	const char** str,
-	size_t*      len
+	const char** str
 ) {
-	const size_t ilen = *len;
+	const char* s = *str;
 	int val = 0;
-	while (*len > 0 && **str >= '0' && **str <= '9') {
-		const int n = **str - '0';
+	for (; (unsigned)(*s - '0') <= 9; s++) {
+		const int n = *s - '0';
 		if (val > (INT_MAX - n) / 10)
 			return INT_MAX;
 		val = 10 * val + n;
-		(*str)++;
-		(*len)--;
 	}
-	if (ilen == *len)
+	if (s == *str)
 		return INT_MAX;
+	*str = s;
 	return val;
 }
 
@@ -94,51 +95,31 @@ static wl_error wl_parse_date(
 	int*         year,
 	int*         month,
 	int*         day,
-	const char** str,
-	size_t*      len
+	const char** str
 ) {
-	*month = wl_parse_uint(str, len);
-	if (*month == INT_MAX)
+	*month = wl_parse_uint(str);
+	if (*month == INT_MAX || **str != '/' || *month < 1 || *month > 12)
 		return wl_invalid_date;
-	if (*len == 0 || **str != '/')
-		return wl_invalid_date;
-	if (*month < 1 || *month > 12)
-		return wl_invalid_date;
-
 	(*str)++;
-	(*len)--;
 
-	*day = wl_parse_uint(str, len);
-	if (*day == INT_MAX)
+	*day = wl_parse_uint(str);
+	if (*day == INT_MAX || **str != '/' || *day < 1 || *day > 31)
 		return wl_invalid_date;
-	if (*len == 0 || **str != '/')
-		return wl_invalid_date;
-	if (*day < 1 || *day > 31)
-		return wl_invalid_date;
-
 	(*str)++;
-	(*len)--;
-
-	if (*len < 4)
-		return wl_invalid_date;
 
 	// year is technically non-fixed width
 	// however realistically it will always be width 4
-	*year = wl_parse_int4(str[0]);
-	if (*year == INT_MAX)
+	*year = wl_parse_int4(*str);
+	if (*year == INT_MAX || *year < 2000 || *year > 2040)
 		return wl_invalid_date;
-	if (*year < 1970 || *year > 2050)
-		return wl_invalid_date;
-
 	*str += 4;
-	*len -= 4;
 
 	return wl_ok;
 }
 
-// Parses time format of xx:yy:zz:qqqq
+// Parses time format of xx:yy:zz.qqqq
 // where x is hour, y is min, z is sec, and q is ns
-// fixed width format
+// fixed width format, each field validated before the delimiter after it is read
 static wl_error wl_parse_time(
 	int*        hour,
 	int*        min,
@@ -146,66 +127,57 @@ static wl_error wl_parse_time(
 	int*        f,
 	const char* str
 ) {
-	if (str[2] != ':' || str[5] != ':' || str[8] != '.')
+	*hour = wl_parse_int2(str);
+	if (*hour == INT_MAX || str[2] != ':')
 		return wl_invalid_date;
-
-	*hour = wl_parse_int2(&str[0]);
-	*min  = wl_parse_int2(&str[3]);
-	*sec  = wl_parse_int2(&str[6]);
-	*f    = wl_parse_int4(&str[9]);
-
-	if (*hour == INT_MAX || *min == INT_MAX || *sec == INT_MAX || *f == INT_MAX)
+	*min = wl_parse_int2(str + 3);
+	if (*min == INT_MAX || str[5] != ':')
 		return wl_invalid_date;
-	if (*hour < 0 || *hour > 23 || *min < 0 || *min > 59 || *sec < 0 || *sec > 59 || *f < 0 || *f > 9999)
+	*sec = wl_parse_int2(str + 6);
+	if (*sec == INT_MAX || str[8] != '.')
+		return wl_invalid_date;
+	*f = wl_parse_int4(str + 9);
+	if (*f == INT_MAX)
+		return wl_invalid_date;
+	if (*hour > 23 || *min > 59 || *sec > 59)
 		return wl_invalid_date;
 
 	return wl_ok;
 }
 
 static wl_error wl_parse_timestamp(
-	int64_t*      ts,
-	const char** str,
-	size_t*      len
+	int64_t*     ts,
+	const char** str
 ) {
 	int y, m, d, H, M, S, F;
 	wl_error err;
 
-	err = wl_parse_date(&y, &m, &d, str, len);
+	err = wl_parse_date(&y, &m, &d, str);
 	if (err != wl_ok)
 		return err;
 
-	if (*len < 14)
+	if (**str != ' ')
 		return wl_invalid_date;
-
 	(*str)++;
-	(*len)--;
 
 	err = wl_parse_time(&H, &M, &S, &F, *str);
 	if (err != wl_ok)
 		return err;
-
-	*len -= 13;
 	*str += 13;
 
-        *ts = wl_days_from_civil(y,m,d)*86400LL + H*3600 + M*60 + S;
+	*ts = wl_days_from_civil(y,m,d)*86400LL + H*3600 + M*60 + S;
 	*ts = (*ts * 1000000000LL) + ((int64_t)F * 100000LL);
 
 	return wl_ok;
 }
 
+// str must be NUL terminated
 static wl_error wl_parse(
-	int64_t*     ts,
+	int64_t*    ts,
 	wl_event*   e,
-	const char* str,
-	size_t      len
+	const char* str
 ) {
-	wl_error err;
-
-	err = wl_parse_timestamp(ts, &str, &len);
-	if (err != wl_ok)
-		return err;
-
-	return wl_ok;
+	return wl_parse_timestamp(ts, &str);
 }
 
 #endif

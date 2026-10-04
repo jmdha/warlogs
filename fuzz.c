@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "warlogs.h"
 
@@ -10,6 +11,10 @@ int LLVMFuzzerTestOneInput(
 ) {
 	int64_t ts;
 	wl_event e;
-	wl_parse(&ts, &e, (const char*)data, size);
+	char* str = malloc(size + 1);
+	memcpy(str, data, size);
+	str[size] = '\0';
+	wl_parse(&ts, &e, str);
+	free(str);
 	return 0;
 }
