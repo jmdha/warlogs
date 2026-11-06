@@ -9,7 +9,7 @@ int LLVMFuzzerTestOneInput(
 	const uint8_t *data,
 	size_t        size
 ) {
-	int64_t ts;
+	unsigned long int ts;
 	wl_event e;
 	char* str = malloc(size + 1);
 	memcpy(str, data, size);
